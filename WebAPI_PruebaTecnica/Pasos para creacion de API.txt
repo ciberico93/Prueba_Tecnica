@@ -1,0 +1,137 @@
+requisito : Crear API REST.
+Realizar crud de  todas las tablas.
+Usar patron repository
+Usar netcore web-Api 6 o 7 
+
+
+Pasos para crear API:
+
+1.- Instalación de Paquetes nuggets, son 4.
+*Microsoft.EntityFrameworkCore
+*Microsoft.EntityFrameworkCore.Design
+*Microsoft.EntityFrameworkCore.SqlServer
+*Microsoft.EntityFrameworkCore.Tools
+
+Crear carpeta Models 
+
+2.- Ejecutar comando en la consola de Adminsitrador de paquetes y  generar DBContext DBSet's
+
+Comando DB First EF:
+Scaffold-DbContext "Server=(local); DataBase=DBCRUDCORE; Integrated Security=true; TrustServerCertificate=True" 
+Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models
+
+
+3.- Se crearan 3 clases en carpeta Models , 
+
+Salvar y copiar la cadena de conexión de clase DBContext: y mover la clase a una nueva carpeta llamada CONTEXT
+ 
+Server=(local) ; DataBase=DBCRUDCORE ; Integrated Security=true; TrustServerCertificate=True
+
+Borrar código desde Warning aprox linea23 y cerrar con {}
+
+4.- Ir al Json y pegar la cadena de conexión.
+"AllowedHosts": "*",
+
+  "ConnectionStrings": {
+    "CadenaSQL": "Server=(local) ; DataBase=DBCRUDCORE ; Integrated Security=true; TrustServerCertificate=True"
+  }
+
+5.- En program a partir de la linea 2 en el archivo  se configura la conexión.
+
+builder.Services.AddDbContext<DbcrudcoreContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CadenaSQL"));
+});
+
+6.- Crear carpeta de Repositories y sub-carpeta IRepositories y crear un repositorio BASE. (Patron Repository)
+
+7.-Crear las clases correspondientes nombre+Repository dentro de carpeta Repositories.
+
+8.- Realizar la lógica de las clases en repositories.
+
+
+8.- Ir al program y hacer el scopped  de la interfas , modelo y repositoriio que se usó.
+Ejemplo : builder.Services.AddScoped<IRepositoryBase<Cargo>,CargoRepository>();
+
+9.-Crear Controlador en carpeta Controllers , adentro del controlador llamar al repositorio base y Models.
+Realizaremos Inyección de Dependencia.
+
+
+
+private readonly IRepositoryBase<Cargo> _repository; 
+clic derecho - acciones rápidas - Generar constructor.
+
+[ApiController]
+    [Route("api/[controller]")]
+    public class EmpleadoController : Controller
+    {
+
+        private readonly IRepositoryBase<Empleado> _repository;
+
+        public EmpleadoController(IRepositoryBase<Empleado> repository)
+        {
+            _repository = repository;
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllEmpleado()
+        {
+            var empleado = await _repository.GetAll();
+            return Ok(empleado);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var empleado = await _repository.GetByIdAsync(id);
+            return Ok(empleado);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(Empleado))]
+        public async Task<IActionResult> CreateEmpleado(Empleado empleado)
+        {
+            Empleado result = await _repository.CreateAsync(empleado);
+
+            return new CreatedResult($"https://localhost:7157/api/Empleado/{result.IdEmpleado}", null);
+        }
+
+        [HttpDelete("{id}")]
+
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
+        public async Task<IActionResult> DeleteEmpleado(int id)
+        {
+            var result = await _repository.DeleteAsync(id);
+            return new OkObjectResult(result);
+        }
+
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Empleado))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<IActionResult> UpdateEmpleado(Empleado empleado)
+        {
+            Empleado result = await _repository.UpdateAsync(empleado);
+
+            if (result == null)
+            {
+                return new NotFoundResult();
+            }
+
+            else
+            {
+                return new OkObjectResult(result);
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
